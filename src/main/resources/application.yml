@@ -1,0 +1,23 @@
+
+spring:
+  kafka:
+    streams:
+      application-id: my-streams-app
+      bootstrap-servers: localhost:9092
+      properties:
+        # Добавьте необходимые параметры для сериализации
+        key.serializer: org.apache.kafka.common.serialization.Serdes$StringSerde
+        value.serializer: org.apache.kafka.common.serialization.Serdes$StringSerde
+
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
