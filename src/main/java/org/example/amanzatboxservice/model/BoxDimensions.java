@@ -4,17 +4,12 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.UUID;
 
-@Entity
-@Table(name = "volume")
 @Getter
 @Setter
-public class Volume {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private UUID id;
+@Entity
+@Table(name = "box_dimensions")
+public class BoxDimensions extends BaseEntity {
 
     @Column(name = "height")
     private Double height;
@@ -25,6 +20,10 @@ public class Volume {
     @Column(name = "length")
     private Double length;
 
-    @Column(name = "volume")
-    private Double volume;
+    public Double calculateVolume() {
+        if (height != null && width != null && length != null) {
+            return height * width * length;
+        }
+        return null;
+    }
 }

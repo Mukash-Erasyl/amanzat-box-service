@@ -7,20 +7,12 @@ import org.example.amanzatboxservice.enums.BoxStatus;
 import org.example.amanzatboxservice.enums.BoxType;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Entity
 @Table(name = "box")
 @Getter
 @Setter
-public class Box {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private UUID id;
-
-    @Column(name = "volume")
-    private Double volume;
+public class Box extends BaseEntity {
 
     @Column(name = "address")
     private String address;
@@ -28,8 +20,9 @@ public class Box {
     @Column(name = "city")
     private String city;
 
-    @Column(name = "volume_id")
-    private Long volumeId;
+    @ManyToOne
+    @JoinColumn(name = "box_dimension_id", referencedColumnName = "id")
+    private BoxDimensions boxDimensions;
 
     @Column(name = "price")
     private BigDecimal price;
@@ -41,4 +34,11 @@ public class Box {
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
     private BoxType type;
+
+    @Column(name = "volume")
+    private Double volume;
+
+    public void handlePrePersistAndUpdate() {
+        this.volume = boxDimensions.calculateVolume();
+    }
 }

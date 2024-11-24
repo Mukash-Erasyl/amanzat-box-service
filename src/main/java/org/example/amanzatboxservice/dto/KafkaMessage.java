@@ -1,4 +1,4 @@
-package org.example.amanzatboxservice.model;
+package org.example.amanzatboxservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

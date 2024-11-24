@@ -6,7 +6,7 @@ import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.StreamsConfig;
-import org.example.amanzatboxservice.model.KafkaMessage;
+import org.example.amanzatboxservice.dto.KafkaMessage;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
 import org.springframework.stereotype.Service;
@@ -26,12 +26,9 @@ public class KafkaRequestReply {
     private final KafkaTemplate<String, byte[]> kafkaTemplate;
     private final ConcurrentHashMap<String, CompletableFuture<KafkaMessage>> pendingRequests = new ConcurrentHashMap<>();
     private KafkaStreams kafkaStreams;
-
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final StreamsConfig kafkaStreamsConfig;
-
     private static final String RESPONSE_TOPIC = "amanzat.box.response";
-
 
     public CompletableFuture<KafkaMessage> sendRequest(String data, String requestTopic) {
         String requestId = UUID.randomUUID().toString();

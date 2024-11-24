@@ -1,19 +1,21 @@
 package org.example.amanzatboxservice.service;
 
 import org.example.amanzatboxservice.dto.BoxRequest;
+import org.example.amanzatboxservice.dto.BoxResponse;
 import org.example.amanzatboxservice.enums.BoxStatus;
 import org.example.amanzatboxservice.model.Box;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface BoxService {
-    List<BoxRequest> findAll();
-    BoxRequest findById(Long id);
-    BoxRequest save(BoxRequest boxRequest);
-    BoxRequest update(Long id, BoxRequest boxRequest);
-    void delete(Long id);
-    List<BoxRequest> findByStatus(String status);
-    List<Box> findByVolumeBetween(Double minVolume, Double maxVolume);
-    BoxRequest updateStatus(Long id, BoxStatus newStatus);
+    List<BoxResponse> findAll();
+    BoxResponse findById(UUID id);
+    BoxResponse save(BoxRequest boxRequest);
+    BoxResponse update(UUID id, BoxRequest boxRequest);
+    void delete(UUID id);
+    List<BoxResponse> findByStatus(String status);
+    List<BoxResponse> findByVolumeBetween(Double minVolume, Double maxVolume);
+    BoxResponse updateStatus(UUID id, BoxStatus newStatus);
 
 }

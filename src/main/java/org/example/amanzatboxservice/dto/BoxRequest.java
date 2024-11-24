@@ -7,13 +7,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Getter
 @Setter
 public class BoxRequest {
-    @NotNull(message = "volume cannot be null")
-    @Min(value = 0, message = "Volume must be a positive number")
-    private Double volume;
 
     @NotNull(message = "Address cannot be null")
     private String address;
@@ -21,9 +19,9 @@ public class BoxRequest {
     @NotNull(message = "City cannot be null")
     private String city;
 
-    @NotNull(message = "volumeId cannot be null")
+    @NotNull(message = "dimensionsId cannot be null")
     @Positive(message = "Price must be positive")
-    private Long volumeId;
+    private UUID dimensionsId;
 
     @NotNull(message = "Price cannot be null")
     @Positive(message = "Price must be positive")
