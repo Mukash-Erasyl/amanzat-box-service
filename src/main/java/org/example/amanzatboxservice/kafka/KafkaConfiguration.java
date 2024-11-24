@@ -46,14 +46,12 @@ public class KafkaConfiguration {
         return new StreamsConfig(properties);
     }
 
-
     @Bean
     public KStream<String, String> kStream(StreamsBuilder streamsBuilder) {
         KStream<String, String> stream = streamsBuilder.stream("amanzat.box.response", Consumed.with(Serdes.String(), Serdes.String()));
         stream.foreach((key, value) -> System.out.println("Received message: " + value));
         return stream;
     }
-
 
 
     @Bean

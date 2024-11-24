@@ -1,5 +1,5 @@
 package org.example.amanzatboxservice.enums;
 
 public enum BoxType {
-    XXS, XS, S, M, L, XL;
+    L, M, S, XL, XS, XXS;
 }

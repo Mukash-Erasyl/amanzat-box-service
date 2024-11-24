@@ -13,6 +13,7 @@ import org.example.amanzatboxservice.repository.BoxDimensionsRepository;
 import org.example.amanzatboxservice.service.BoxService;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -89,7 +90,6 @@ public class DefaultBoxService implements BoxService {
         }
     }
 
-
     public List<BoxResponse> findByVolumeBetween(Double minVolume, Double maxVolume) {
         return boxRepository.findByVolumeBetween(minVolume, maxVolume)
                 .stream()
@@ -106,6 +106,16 @@ public class DefaultBoxService implements BoxService {
         Box updatedBox = boxRepository.save(existingBox);
 
         return boxMapper.toResponse(updatedBox);
+    }
+
+    public BigDecimal findPriceById(UUID boxId) {
+        Optional<BigDecimal> priceOptional = boxRepository.findPriceById(boxId);
+
+        if (priceOptional.isPresent()) {
+            return priceOptional.get();
+        } else {
+            throw new RuntimeException("Box with ID " + boxId + " not found");
+        }
     }
 }
 
