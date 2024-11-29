@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   zookeeper:
     container_name: zookeeper
@@ -27,9 +28,37 @@ services:
     container_name: kafka-ui
     image: provectuslabs/kafka-ui:latest
     ports:
-      - "8082:8080" # UI доступен на 8082
+      - "8091:8080"
     environment:
       - DYNAMIC_CONFIG_ENABLED=true
       - KAFKA_CLUSTERS_0_NAME=local-cluster
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=localhost:9092 # Укажите ваш порт Kafka
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=localhost:9092
       - KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+
+  postgres:
+    container_name: postgres
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: amanzat_box
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  amanzat-box-service:
+    container_name: amanzat-box-service
+    image: mukasherasyl/amanzat-box-service:latest
+    ports:
+      - "8083:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/amanzat_box
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin123
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
