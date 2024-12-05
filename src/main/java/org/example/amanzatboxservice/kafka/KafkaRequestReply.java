@@ -26,7 +26,7 @@ public class KafkaRequestReply {
     private final KafkaTemplate<String, byte[]> kafkaTemplate;
     private final ConcurrentHashMap<String, CompletableFuture<KafkaMessage>> pendingRequests = new ConcurrentHashMap<>();
     private KafkaStreams kafkaStreams;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     private final StreamsConfig kafkaStreamsConfig;
     private static final String RESPONSE_TOPIC = "amanzat.box.response";
 
@@ -35,7 +35,8 @@ public class KafkaRequestReply {
         CompletableFuture<KafkaMessage> futureResponse = new CompletableFuture<>();
         pendingRequests.put(requestId, futureResponse);
 
-        KafkaMessage requestMessage = new KafkaMessage(requestId, data, "REQUEST", RESPONSE_TOPIC);
+        System.out.println("\n\n\n\n" + data);
+        KafkaMessage requestMessage = new KafkaMessage(requestId, data, RESPONSE_TOPIC);
 
         try {
             byte[] messageBytes = objectMapper.writeValueAsBytes(requestMessage);

@@ -10,13 +10,7 @@ import lombok.NoArgsConstructor;
 public class KafkaMessage {
 
     private String correlationId;
-    private String body;
-    private String requestType;
+    private String data;
     private String replyTo;
-
-    public static class RequestType {
-        public static final String REQUEST = "REQUEST";
-        public static final String RESPONSE = "RESPONSE";
-    }
 
 }

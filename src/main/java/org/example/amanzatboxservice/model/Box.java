@@ -14,11 +14,6 @@ import java.math.BigDecimal;
 @Setter
 public class Box extends BaseEntity {
 
-    @Column(name = "address")
-    private String address;
-
-    @Column(name = "city")
-    private String city;
 
     @ManyToOne
     @JoinColumn(name = "box_dimension_id", referencedColumnName = "id")
@@ -37,6 +32,10 @@ public class Box extends BaseEntity {
 
     @Column(name = "volume")
     private Double volume;
+
+    @ManyToOne
+    @JoinColumn(name = "warehouse_id", referencedColumnName = "id")
+    private Warehouse warehouse;
 
     public void handlePrePersistAndUpdate() {
         this.volume = boxDimensions.calculateVolume();

@@ -1,18 +1,21 @@
 package org.example.amanzatboxservice.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.example.amanzatboxservice.dto.KafkaMessage;
 import org.example.amanzatboxservice.enums.BoxStatus;
 import org.example.amanzatboxservice.service.BoxService;
+import org.example.amanzatboxservice.utils.KafkaMessageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
-
 
 @Component
 @RequiredArgsConstructor
@@ -20,11 +23,11 @@ public class KafkaConsumer {
     private static final Logger log = LoggerFactory.getLogger(KafkaConsumer.class);
     private final BoxService boxService;
     private final KafkaProducer producer;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "amanzat.box-api.request.block-get-cost", groupId = "group-0")
-    public void listenToBlockGetCostRequest(ConsumerRecord<String, byte[]> record) {
-        log.info("Received message from 'amanzat.box-api.request.block-get-cost' topic: {}", record.value());
+    @KafkaListener(topics = "amanzat.box-api.block-price", groupId = "group-0")
+    public void listenToBlockGetCostRequest(ConsumerRecord<String, byte[]> record) throws JsonProcessingException {
+        log.info("Received message from 'amanzat.box-api.block-price' topic: {}", record.value());
 
         KafkaMessage message;
         try {
@@ -36,25 +39,26 @@ public class KafkaConsumer {
 
         String correlationId = message.getCorrelationId();
         String replyTo = message.getReplyTo();
-        String body = message.getBody();
+        String data = message.getData();
 
-        boxService.updateStatus(UUID.fromString(body), BoxStatus.BOOKED);
-        String responseMessage = boxService.findPriceById(UUID.fromString(body)).toString();
+        boxService.updateStatus(UUID.fromString(data), BoxStatus.BOOKED);
+        String price = boxService.findPriceById(UUID.fromString(data)).toString();
 
-        KafkaMessage responseKafkaMessage = new KafkaMessage();
-        responseKafkaMessage.setCorrelationId(correlationId);
-        responseKafkaMessage.setRequestType(KafkaMessage.RequestType.RESPONSE);
-        responseKafkaMessage.setBody(responseMessage);
-        responseKafkaMessage.setReplyTo(replyTo);
+        Map<String, String> responseMap = new HashMap<>();
+        responseMap.put("price", price);
+
+        String jsonResponse = objectMapper.writeValueAsString(responseMap);
+
+        KafkaMessage responseKafkaMessage = KafkaMessageUtils.createKafkaMessage(correlationId, jsonResponse, replyTo);
 
         producer.sendMessage(replyTo, responseKafkaMessage.toString());
 
-        log.info("Sent response to topic '{}' with body: {}", replyTo, responseMessage);
+        log.info("Sent response to topic '{}' with data: {}", replyTo, jsonResponse);
     }
 
-    @KafkaListener(topics = "amanzat.box-api.get-cost", groupId = "group-0")
-    public void listenToGetCostRequest(ConsumerRecord<String, byte[]> record) {
-        log.info("Received message from 'amanzat.box-api.get-cost", record.value());
+    @KafkaListener(topics = "amanzat.box-api.price", groupId = "group-0")
+    public void listenToGetCostRequest(ConsumerRecord<String, byte[]> record) throws JsonProcessingException {
+        log.info("Received message from 'amanzat.box-api.price', body: {}", record.value());
 
         KafkaMessage message;
         try {
@@ -66,19 +70,20 @@ public class KafkaConsumer {
 
         String correlationId = message.getCorrelationId();
         String replyTo = message.getReplyTo();
-        String body = message.getBody();
+        String data = message.getData();
 
-        String responseMessage = boxService.findPriceById(UUID.fromString(body)).toString();
+        String price = boxService.findPriceById(UUID.fromString(data)).toString();
 
-        KafkaMessage responseKafkaMessage = new KafkaMessage();
-        responseKafkaMessage.setCorrelationId(correlationId);
-        responseKafkaMessage.setRequestType(KafkaMessage.RequestType.RESPONSE);
-        responseKafkaMessage.setBody(responseMessage);
-        responseKafkaMessage.setReplyTo(replyTo);
+        Map<String, String> responseMap = new HashMap<>();
+        responseMap.put("price", price);
+
+        String jsonResponse = objectMapper.writeValueAsString(responseMap);
+
+        KafkaMessage responseKafkaMessage = KafkaMessageUtils.createKafkaMessage(correlationId, jsonResponse, replyTo);
 
         producer.sendMessage(replyTo, responseKafkaMessage.toString());
 
-        log.info("Sent response to topic '{}' with body: {}", replyTo, responseMessage);
+        log.info("Sent response to topic '{}' with body: {}", replyTo, jsonResponse);
     }
 
     @KafkaListener(topics = "amanzat.box-api.unblock", groupId = "group-0")
@@ -93,10 +98,8 @@ public class KafkaConsumer {
             return;
         }
 
-        String body = message.getBody();
+        String body = message.getData();
         boxService.updateStatus(UUID.fromString(body), BoxStatus.AVAILABLE);
-        log.info("Box with id: {} now available", body);
-
+        log.info("Box with id: {} is now available", body);
     }
-
 }

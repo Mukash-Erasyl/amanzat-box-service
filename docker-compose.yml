@@ -1,64 +1,156 @@
 version: '3.8'
 
 services:
+  amanzat-box-service:
+    image: amanzat-box-service:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      DB_URL: jdbc:postgresql://my-postgres:5432/amanzat_box
+      DB_USERNAME: admin
+      DB_PASSWORD: admin123
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      - kafka
+      - my-postgres
+    networks:
+      - kafka_network
+
+  my-postgres:
+    image: postgres:latest
+    container_name: my-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: amanzat_box
+    ports:
+      - "5433:5432"
+    networks:
+      - kafka_network
+
+
   zookeeper:
-    container_name: zookeeper
     image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
     ports:
       - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - kafka_network
 
   kafka:
-    container_name: kafka
     image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
     ports:
       - "9092:9092"
-      - "9094:9094"
+      - "9093:9093"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    networks:
+      - kafka_network
 
   kafka-ui:
-    container_name: kafka-ui
+    container_name: kafka-ui-amz
     image: provectuslabs/kafka-ui:latest
     ports:
-      - "8091:8080"
+      - "8082:8080"
     environment:
-      - DYNAMIC_CONFIG_ENABLED=true
-      - KAFKA_CLUSTERS_0_NAME=local-cluster
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=localhost:9092
-      - KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
-
-  postgres:
-    container_name: postgres
-    image: postgres:15
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
-      POSTGRES_DB: amanzat_box
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  amanzat-box-service:
-    container_name: amanzat-box-service
-    image: mukasherasyl/amanzat-box-service:latest
-    ports:
-      - "8083:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/amanzat_box
-      - SPRING_DATASOURCE_USERNAME=admin
-      - SPRING_DATASOURCE_PASSWORD=admin123
+      - KAFKA_CLUSTERS_0_NAME=kafka-cluster
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
     depends_on:
-      - postgres
+      kafka:
+        condition: service_healthy
+    networks:
+      - kafka_network
 
-volumes:
-  postgres_data:
+  amanzat-notification:
+    container_name: amz-notification-api
+    image: zhandar/amz-notification-api
+    ports:
+      - "8081:8080"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8080
+      - KAFKA_BROKERS=kafka:9092
+      - SENDER_MAIL_ADDRESS=zhandar1503@gmail.com
+      - SENDER_MAIL_PASSWORD=xpsxwtokghiamfhy
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - kafka_network
+
+  amanzat-user:
+    container_name: amz-user-api
+    image: zhandar/amz-user-api
+    ports:
+      - "8085:8080"
+    environment:
+      - PRIVATE_KEY_PATH=/app/configs/private_key.pem
+    depends_on:
+      my-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    volumes:
+     - /Users/erasyl/Desktop/Other/config.json:/app/config.json
+     - /Users/erasyl/Desktop/Other/private_key.pem:/app/configs/private_key.pem
+    networks:
+      - kafka_network
+
+  amanzat-order:
+    container_name: amz-order-api
+    image: alibiulynurbek/orderservice-order:1.0
+    ports:
+      - "8084:8080"
+    depends_on:
+      - my-postgres
+      - redis
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://my-postgres:5432/order_api
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      BOX_API_REQUEST_BLOCK_PRICE_TOPIC: amanzat.box-api.block
+      BOX_API_REQUEST_PRICE_TOPIC: amanzat.box-api.price
+      BOX_API_REQUEST_UNBLOCK_TOPIC: amanzat.box-api.unblock
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      USER_API_VALIDATE_TOKEN_TOPIC: amanzat.user-api.validateToken
+    networks:
+      - kafka_network
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kafka_network
+
+networks:
+  kafka_network:
+    driver: bridge

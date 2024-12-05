@@ -12,8 +12,6 @@ public class BoxMapper {
 
     public BoxResponse toResponse(Box box) {
         BoxResponse response = new BoxResponse();
-        response.setAddress(box.getAddress());
-        response.setCity(box.getCity());
         response.setBoxDimensions(box.getBoxDimensions());
         response.setPrice(box.getPrice());
         response.setStatus(box.getStatus());
@@ -24,8 +22,6 @@ public class BoxMapper {
 
     public Box toEntity(BoxRequest boxRequest) {
         Box box = new Box();
-        box.setAddress(boxRequest.getAddress());
-        box.setCity(boxRequest.getCity());
         box.setPrice(boxRequest.getPrice());
         box.setStatus(BoxStatus.valueOf(boxRequest.getStatus().toUpperCase()));
         box.setType(BoxType.valueOf(boxRequest.getType().toUpperCase()));

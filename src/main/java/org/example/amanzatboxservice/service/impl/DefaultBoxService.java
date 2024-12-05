@@ -62,8 +62,6 @@ public class DefaultBoxService implements BoxService {
             existingBox.setBoxDimensions(boxDimensions);
         }
 
-        existingBox.setCity(boxRequest.getCity());
-        existingBox.setAddress(boxRequest.getAddress());
         existingBox.setPrice(boxRequest.getPrice());
         existingBox.setStatus(BoxStatus.valueOf(boxRequest.getStatus().toUpperCase()));
         existingBox.setType(BoxType.valueOf(boxRequest.getType().toUpperCase()));

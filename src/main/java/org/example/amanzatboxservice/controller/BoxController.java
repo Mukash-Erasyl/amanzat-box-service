@@ -1,6 +1,7 @@
 package org.example.amanzatboxservice.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.amanzatboxservice.anotation.RoleCheck;
 import org.example.amanzatboxservice.dto.BoxRequest;
 import org.example.amanzatboxservice.dto.BoxResponse;
 import org.example.amanzatboxservice.enums.BoxStatus;
@@ -31,6 +32,7 @@ public class BoxController {
         return ResponseEntity.ok(boxResponse);
     }
 
+    @RoleCheck(role ="ADMIN")
     @PostMapping
     public ResponseEntity<BoxResponse> createBox(@RequestBody BoxRequest boxRequest) {
         BoxResponse boxResponse = boxService.save(boxRequest);
