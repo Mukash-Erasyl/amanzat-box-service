@@ -27,11 +27,11 @@ public class KafkaConfiguration {
     private final KafkaProperties kafkaProperties;
 
     @Bean
-    public KafkaTemplate<String, byte[]> kafkaTemplate() {
+    public KafkaTemplate<String, String> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 
-    private ProducerFactory<String, byte[]> producerFactory() {
+    private ProducerFactory<String, String> producerFactory() {
         Map<String, Object> producerProps = new HashMap<>();
         producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, kafkaProperties.getProducer().getKeySerializer());

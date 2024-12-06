@@ -8,9 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class KafkaMessage {
-
     private String correlationId;
-    private String data;
+    private Object data;
     private String replyTo;
 
 }

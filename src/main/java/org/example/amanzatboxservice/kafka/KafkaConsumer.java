@@ -26,7 +26,7 @@ public class KafkaConsumer {
     private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "amanzat.box-api.block-price", groupId = "group-0")
-    public void listenToBlockGetCostRequest(ConsumerRecord<String, byte[]> record) throws JsonProcessingException {
+    public void listenToBlockGetCostRequest(ConsumerRecord<String, String> record) throws JsonProcessingException {
         log.info("Received message from 'amanzat.box-api.block-price' topic: {}", record.value());
 
         KafkaMessage message;
@@ -39,7 +39,7 @@ public class KafkaConsumer {
 
         String correlationId = message.getCorrelationId();
         String replyTo = message.getReplyTo();
-        String data = message.getData();
+        String data = message.getData().toString();
 
         boxService.updateStatus(UUID.fromString(data), BoxStatus.BOOKED);
         String price = boxService.findPriceById(UUID.fromString(data)).toString();
@@ -57,7 +57,7 @@ public class KafkaConsumer {
     }
 
     @KafkaListener(topics = "amanzat.box-api.price", groupId = "group-0")
-    public void listenToGetCostRequest(ConsumerRecord<String, byte[]> record) throws JsonProcessingException {
+    public void listenToGetCostRequest(ConsumerRecord<String, String> record) throws JsonProcessingException {
         log.info("Received message from 'amanzat.box-api.price', body: {}", record.value());
 
         KafkaMessage message;
@@ -70,7 +70,7 @@ public class KafkaConsumer {
 
         String correlationId = message.getCorrelationId();
         String replyTo = message.getReplyTo();
-        String data = message.getData();
+        String data = message.getData().toString();
 
         String price = boxService.findPriceById(UUID.fromString(data)).toString();
 
@@ -87,7 +87,7 @@ public class KafkaConsumer {
     }
 
     @KafkaListener(topics = "amanzat.box-api.unblock", groupId = "group-0")
-    public void listenToUnblockRequest(ConsumerRecord<String, byte[]> record) {
+    public void listenToUnblockRequest(ConsumerRecord<String, String> record) {
         log.info("Received message from 'amanzat.box-api.unblock' topic: {}", record.value());
 
         KafkaMessage message;
@@ -98,7 +98,7 @@ public class KafkaConsumer {
             return;
         }
 
-        String body = message.getData();
+        String body = message.getData().toString();
         boxService.updateStatus(UUID.fromString(body), BoxStatus.AVAILABLE);
         log.info("Box with id: {} is now available", body);
     }

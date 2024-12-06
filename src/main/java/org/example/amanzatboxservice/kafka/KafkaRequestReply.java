@@ -7,12 +7,15 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.StreamsConfig;
 import org.example.amanzatboxservice.dto.KafkaMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,7 +26,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @EnableKafkaStreams
 public class KafkaRequestReply {
 
-    private final KafkaTemplate<String, byte[]> kafkaTemplate;
+    private static final Logger log = LoggerFactory.getLogger(KafkaRequestReply.class);
+    private final KafkaTemplate<String, String> kafkaTemplate;
     private final ConcurrentHashMap<String, CompletableFuture<KafkaMessage>> pendingRequests = new ConcurrentHashMap<>();
     private KafkaStreams kafkaStreams;
     private final ObjectMapper objectMapper;
@@ -35,11 +39,12 @@ public class KafkaRequestReply {
         CompletableFuture<KafkaMessage> futureResponse = new CompletableFuture<>();
         pendingRequests.put(requestId, futureResponse);
 
-        System.out.println("\n\n\n\n" + data);
+
         KafkaMessage requestMessage = new KafkaMessage(requestId, data, RESPONSE_TOPIC);
 
+        log.info("Send and wait message: {}", requestMessage);
         try {
-            byte[] messageBytes = objectMapper.writeValueAsBytes(requestMessage);
+            String messageBytes = objectMapper.writeValueAsString(requestMessage);
             kafkaTemplate.send(requestTopic, messageBytes);
         } catch (Exception e) {
             e.printStackTrace();
@@ -51,11 +56,20 @@ public class KafkaRequestReply {
     @PostConstruct
     public void startKafkaStream() {
         StreamsBuilder streamsBuilder = new StreamsBuilder();
-        KStream<String, byte[]> stream = streamsBuilder.stream(RESPONSE_TOPIC);
+        KStream<String, String> stream = streamsBuilder.stream(RESPONSE_TOPIC);
+
 
         stream.map((key, messageBytes) -> {
+
                     try {
                         KafkaMessage kafkaMessage = objectMapper.readValue(messageBytes, KafkaMessage.class);
+                        if (kafkaMessage != null) {
+                            log.info("Successfully received response with correlationId: {}", kafkaMessage.getCorrelationId());
+
+                        } else {
+                            log.error("Invalid or missing data in response: {}", kafkaMessage);
+                        }
+
                         String requestId = kafkaMessage.getCorrelationId();
 
                         CompletableFuture<KafkaMessage> futureResponse = pendingRequests.remove(requestId);

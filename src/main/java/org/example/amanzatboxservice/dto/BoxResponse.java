@@ -7,12 +7,12 @@ import org.example.amanzatboxservice.enums.BoxType;
 import org.example.amanzatboxservice.model.BoxDimensions;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Getter
 @Setter
 public class BoxResponse {
-    private String address;
-    private String city;
+    private UUID id;
     private BoxDimensions boxDimensions;
     private BigDecimal price;
     private BoxStatus status;

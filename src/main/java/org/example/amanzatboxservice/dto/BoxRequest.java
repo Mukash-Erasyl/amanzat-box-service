@@ -12,14 +12,7 @@ import java.util.UUID;
 @Setter
 public class BoxRequest {
 
-    @NotNull(message = "Address cannot be null")
-    private String address;
-
-    @NotNull(message = "City cannot be null")
-    private String city;
-
     @NotNull(message = "dimensionsId cannot be null")
-    @Positive(message = "Price must be positive")
     private UUID dimensionsId;
 
     @NotNull(message = "Price cannot be null")

@@ -1,0 +1,24 @@
+{
+  "app": {
+    "app_name": "amanzat_user_api",
+    "bind_addr": "0.0.0.0",
+    "bind_port": "8080",
+    "log_level": "debug"
+  },
+  "database": {
+    "host": "my-postgres",
+    "port": "5432",
+    "username": "admin",
+    "password": "admin123",
+    "database": "amanzat_user"
+  },
+  "kafka": {
+    "brokers": ["kafka:9092"]
+  },
+  "redis": {
+    "host": "redis",
+    "port": "6379",
+    "password": "",
+    "db": 0
+  }
+}

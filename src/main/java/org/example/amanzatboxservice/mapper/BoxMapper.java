@@ -12,6 +12,7 @@ public class BoxMapper {
 
     public BoxResponse toResponse(Box box) {
         BoxResponse response = new BoxResponse();
+        response.setId(box.getId());
         response.setBoxDimensions(box.getBoxDimensions());
         response.setPrice(box.getPrice());
         response.setStatus(box.getStatus());

@@ -39,6 +39,7 @@ public class BoxController {
         return ResponseEntity.status(HttpStatus.CREATED).body(boxResponse);
     }
 
+    @RoleCheck(role ="ADMIN")
     @PutMapping("/{id}")
     public ResponseEntity<BoxResponse> updateBox(
             @PathVariable UUID id,
@@ -47,6 +48,7 @@ public class BoxController {
         return ResponseEntity.ok(updatedBox);
     }
 
+    @RoleCheck(role ="ADMIN")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBox(@PathVariable UUID id) {
         boxService.delete(id);
@@ -67,6 +69,7 @@ public class BoxController {
         return ResponseEntity.ok(boxes);
     }
 
+    @RoleCheck(role ="ADMIN")
     @PatchMapping("/{id}/status")
     public ResponseEntity<BoxResponse> updateBoxStatus(
             @PathVariable UUID id,
