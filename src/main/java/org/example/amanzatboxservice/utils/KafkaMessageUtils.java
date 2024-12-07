@@ -1,20 +1,19 @@
 package org.example.amanzatboxservice.utils;
 
-import org.example.amanzatboxservice.dto.KafkaMessage;
+import org.example.amanzatboxservice.dto.KafkaMessageDTO;
 import org.springframework.stereotype.Component;
 
 @Component
 public class KafkaMessageUtils {
 
     private KafkaMessageUtils() {
-
     }
 
-    public static KafkaMessage createKafkaMessage(String correlationId, String data, String replyTo) {
-        KafkaMessage responseKafkaMessage = new KafkaMessage();
-        responseKafkaMessage.setCorrelationId(correlationId);
-        responseKafkaMessage.setData(data);
-        responseKafkaMessage.setReplyTo(replyTo);
-        return responseKafkaMessage;
+    public static KafkaMessageDTO createKafkaMessageDTO(String correlationId, Object data, String replyTo) {
+        KafkaMessageDTO kafkaMessageDTO = new KafkaMessageDTO();
+        kafkaMessageDTO.setCorrelationId(correlationId);
+        kafkaMessageDTO.setData(data);
+        kafkaMessageDTO.setReplyTo(replyTo);
+        return kafkaMessageDTO;
     }
 }

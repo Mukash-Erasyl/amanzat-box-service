@@ -1,10 +1,9 @@
 package org.example.amanzatboxservice.kafka;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.example.amanzatboxservice.dto.KafkaMessage;
 import org.example.amanzatboxservice.enums.BoxStatus;
 import org.example.amanzatboxservice.service.BoxService;
 import org.example.amanzatboxservice.utils.KafkaMessageUtils;
@@ -17,89 +16,102 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+
 @Component
 @RequiredArgsConstructor
 public class KafkaConsumer {
     private static final Logger log = LoggerFactory.getLogger(KafkaConsumer.class);
+    private final ObjectMapper objectMapper;
     private final BoxService boxService;
     private final KafkaProducer producer;
-    private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "amanzat.box-api.block-price", groupId = "group-0")
-    public void listenToBlockGetCostRequest(ConsumerRecord<String, String> record) throws JsonProcessingException {
-        log.info("Received message from 'amanzat.box-api.block-price' topic: {}", record.value());
+    public void listenToBlockGetCostRequest(ConsumerRecord<String, String> record) {
+        log.info("message: {}", record.value());
 
-        KafkaMessage message;
         try {
-            message = objectMapper.readValue(record.value(), KafkaMessage.class);
+            JsonNode jsonNode = objectMapper.readTree(record.value());
+
+            String correlationId = jsonNode.get("correlationId").asText();
+            String data = jsonNode.get("data").asText();
+            String replyTo = jsonNode.get("replyTo").asText();
+
+            log.info("CorrelationId: {}", correlationId);
+            log.info("data: {}", data);
+            log.info("ReplyTo: {}", replyTo);
+
+            boxService.updateStatus(UUID.fromString(data), BoxStatus.BOOKED);
+            var price = boxService.findPriceById(UUID.fromString(data));
+
+            Map<String, Integer> responseMap = new HashMap<>();
+            responseMap.put("price", price.intValue());
+
+            String jsonResponse = objectMapper.writeValueAsString(responseMap);
+
+            var responseMessage = KafkaMessageUtils.createKafkaMessageDTO(correlationId, jsonResponse, "");
+            producer.sendJsonMessage(replyTo, responseMessage);
+
+            log.info("Sent response to topic '{}' with data: {}", replyTo, jsonResponse);
+
         } catch (Exception e) {
-            log.error("Failed to parse Kafka message", e);
-            return;
+            log.error("Error parsing the message: {}", e.getMessage());
         }
 
-        String correlationId = message.getCorrelationId();
-        String replyTo = message.getReplyTo();
-        String data = message.getData().toString();
-
-        boxService.updateStatus(UUID.fromString(data), BoxStatus.BOOKED);
-        String price = boxService.findPriceById(UUID.fromString(data)).toString();
-
-        Map<String, String> responseMap = new HashMap<>();
-        responseMap.put("price", price);
-
-        String jsonResponse = objectMapper.writeValueAsString(responseMap);
-
-        KafkaMessage responseKafkaMessage = KafkaMessageUtils.createKafkaMessage(correlationId, jsonResponse, replyTo);
-
-        producer.sendMessage(replyTo, responseKafkaMessage.toString());
-
-        log.info("Sent response to topic '{}' with data: {}", replyTo, jsonResponse);
     }
 
     @KafkaListener(topics = "amanzat.box-api.price", groupId = "group-0")
-    public void listenToGetCostRequest(ConsumerRecord<String, String> record) throws JsonProcessingException {
+    public void listenToGetCostRequest(ConsumerRecord<String, String> record) {
         log.info("Received message from 'amanzat.box-api.price', body: {}", record.value());
 
-        KafkaMessage message;
         try {
-            message = objectMapper.readValue(record.value(), KafkaMessage.class);
+            JsonNode jsonNode = objectMapper.readTree(record.value());
+
+            String correlationId = jsonNode.get("correlationId").asText();
+            String data = jsonNode.get("data").asText();
+            String replyTo = jsonNode.get("replyTo").asText();
+
+            log.info("CorrelationId: {}", correlationId);
+            log.info("data: {}", data);
+            log.info("ReplyTo: {}", replyTo);
+
+            var price = boxService.findPriceById(UUID.fromString(data));
+
+            Map<String, Integer> responseMap = new HashMap<>();
+            responseMap.put("price", price.intValue());
+
+            String jsonResponse = objectMapper.writeValueAsString(responseMap);
+
+            var responseMessage = KafkaMessageUtils.createKafkaMessageDTO(correlationId, jsonResponse, "");
+            producer.sendJsonMessage(replyTo, responseMessage);
+
+            log.info("Sent response to topic '{}' with data: {}", replyTo, jsonResponse);
+
         } catch (Exception e) {
-            log.error("Failed to parse Kafka message", e);
-            return;
+            log.error("Error parsing the message: {}", e.getMessage());
         }
-
-        String correlationId = message.getCorrelationId();
-        String replyTo = message.getReplyTo();
-        String data = message.getData().toString();
-
-        String price = boxService.findPriceById(UUID.fromString(data)).toString();
-
-        Map<String, String> responseMap = new HashMap<>();
-        responseMap.put("price", price);
-
-        String jsonResponse = objectMapper.writeValueAsString(responseMap);
-
-        KafkaMessage responseKafkaMessage = KafkaMessageUtils.createKafkaMessage(correlationId, jsonResponse, replyTo);
-
-        producer.sendMessage(replyTo, responseKafkaMessage.toString());
-
-        log.info("Sent response to topic '{}' with body: {}", replyTo, jsonResponse);
     }
 
     @KafkaListener(topics = "amanzat.box-api.unblock", groupId = "group-0")
     public void listenToUnblockRequest(ConsumerRecord<String, String> record) {
         log.info("Received message from 'amanzat.box-api.unblock' topic: {}", record.value());
 
-        KafkaMessage message;
         try {
-            message = objectMapper.readValue(record.value(), KafkaMessage.class);
-        } catch (Exception e) {
-            log.error("Failed to parse Kafka message", e);
-            return;
-        }
+            JsonNode jsonNode = objectMapper.readTree(record.value());
 
-        String body = message.getData().toString();
-        boxService.updateStatus(UUID.fromString(body), BoxStatus.AVAILABLE);
-        log.info("Box with id: {} is now available", body);
+            String correlationId = jsonNode.get("correlationId").asText();
+            String data = jsonNode.get("data").asText();
+            String replyTo = jsonNode.get("replyTo").asText();
+
+            log.info("CorrelationId: {}", correlationId);
+            log.info("data: {}", data);
+            log.info("ReplyTo: {}", replyTo);
+
+            boxService.updateStatus(UUID.fromString(data), BoxStatus.AVAILABLE);
+
+            log.info("Box with id: {} is now available", data);
+
+        } catch (Exception e) {
+            log.error("Error parsing the message: {}", e.getMessage());
+        }
     }
 }

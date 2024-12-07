@@ -32,19 +32,19 @@ public class WarehouseController {
                 .toResponse(warehouseService.getById(id)));
     }
 
-    @RoleCheck(role ="ADMIN")
+    @RoleCheck(role = "ADMIN")
     @PostMapping
     public ResponseEntity<WarehouseResponse> create(@RequestBody WarehouseRequest warehouseRequest){
         return ResponseEntity.ok(WarehouseMapper.toResponse(warehouseService.create(warehouseRequest)));
     }
 
-    @RoleCheck(role ="ADMIN")
+    @RoleCheck(role = "ADMIN")
     @PutMapping("/{id}")
     public ResponseEntity<WarehouseResponse> update(@PathVariable UUID id, @RequestBody WarehouseRequest warehouseRequest){
         return ResponseEntity.ok(WarehouseMapper.toResponse(warehouseService.update(id, warehouseRequest)));
     }
 
-    @RoleCheck(role ="ADMIN")
+    @RoleCheck(role = "ADMIN")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id){
         warehouseService.delete(id);

@@ -1,41 +1,50 @@
 package org.example.amanzatboxservice.kafka;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.example.amanzatboxservice.config.KafkaProperties;
+import org.example.amanzatboxservice.dto.KafkaMessageDTO;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.config.TopicBuilder;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
-
+import org.springframework.kafka.annotation.EnableKafkaStreams;
+import org.springframework.kafka.core.*;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.MessageListener;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableKafkaStreams
 public class KafkaConfiguration {
 
     private final KafkaProperties kafkaProperties;
 
     @Bean
-    public KafkaTemplate<String, String> kafkaTemplate() {
+    public KafkaTemplate<String, Object> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 
-    private ProducerFactory<String, String> producerFactory() {
+
+    private ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> producerProps = new HashMap<>();
         producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
-        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, kafkaProperties.getProducer().getKeySerializer());
-        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, kafkaProperties.getProducer().getValueSerializer());
+        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         return new DefaultKafkaProducerFactory<>(producerProps);
     }
 
@@ -50,33 +59,13 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    public KStream<String, String> kStream(StreamsBuilder streamsBuilder) {
-        KStream<String, String> stream = streamsBuilder.stream(kafkaProperties.getTopics().getBoxResponse(), Consumed.with(Serdes.String(), Serdes.String()));
-        stream.foreach((key, value) -> System.out.println("Received message: " + value));
-        return stream;
+    public KStream<String, Object> kStream(StreamsBuilder streamsBuilder) {
+        return streamsBuilder.stream(
+                kafkaProperties.getTopics().getBoxResponse(),
+                Consumed.with(Serdes.String(), new JsonSerde<>(Object.class))
+        ).peek((key, value) -> System.out.println("Received message: " + value));
     }
 
-    @Bean
-    public NewTopic boxFindTopic() {
-        return TopicBuilder.name(kafkaProperties.getTopics().getBoxFind())
-                .partitions(3)
-                .replicas(1)
-                .build();
-    }
 
-    @Bean
-    public NewTopic boxResponseTopic() {
-        return TopicBuilder.name(kafkaProperties.getTopics().getBoxResponse())
-                .partitions(3)
-                .replicas(1)
-                .build();
-    }
 
-    @Bean
-    public NewTopic auditResponseTopic() {
-        return TopicBuilder.name(kafkaProperties.getTopics().getAuditResponse())
-                .partitions(1)
-                .replicas(1)
-                .build();
-    }
 }

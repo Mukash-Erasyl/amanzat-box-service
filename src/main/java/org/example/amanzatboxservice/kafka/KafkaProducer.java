@@ -7,9 +7,16 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class KafkaProducer {
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    public void sendMessage(String topic, String message){
+    public void sendStringMessage(String topic, String message) {
         kafkaTemplate.send(topic, message);
+        System.out.println("Sent string message: " + message + " to topic: " + topic);
+    }
+
+
+    public void sendJsonMessage(String topic, Object message) {
+        kafkaTemplate.send(topic, message);
+        System.out.println("Sent JSON message: " + message + " to topic: " + topic);
     }
 }

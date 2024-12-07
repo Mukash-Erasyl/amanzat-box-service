@@ -1,6 +1,5 @@
 package org.example.amanzatboxservice.aspect;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,10 +7,11 @@ import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.example.amanzatboxservice.anotation.RoleCheck;
-import org.example.amanzatboxservice.dto.KafkaMessage;
-import org.example.amanzatboxservice.dto.TokenValidateRequest;
 import org.example.amanzatboxservice.dto.TokenValidateResponse;
+import org.example.amanzatboxservice.kafka.KafkaConsumer;
 import org.example.amanzatboxservice.kafka.KafkaRequestReply;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -23,6 +23,7 @@ import java.util.Objects;
 @Component
 @RequiredArgsConstructor
 public class JwtValidationAspect {
+    private static final Logger log = LoggerFactory.getLogger(JwtValidationAspect.class);
 
     private final KafkaRequestReply kafkaRequestReply;
     private final ObjectMapper objectMapper;
@@ -39,10 +40,11 @@ public class JwtValidationAspect {
         }
 
         String tokenValidateRequestJson = objectMapper.writeValueAsString(sessionId);
-        KafkaMessage kafkaMessage = kafkaRequestReply.sendRequest(tokenValidateRequestJson, "amanzat.user-api.validateToken").get();
+        var kafkaMessage = kafkaRequestReply.sendRequest(tokenValidateRequestJson, "amanzat.user-api.validateToken").get();
 
         TokenValidateResponse tokenValidateResponse;
         tokenValidateResponse = objectMapper.convertValue(kafkaMessage.getData(), TokenValidateResponse.class);
+        log.info("TokenValidateResponse kafkaMessage: {}", kafkaMessage);
 
         if (!tokenValidateResponse.isStatus()) {
             throw new RuntimeException("Access Denied: Invalid token.");
