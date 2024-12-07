@@ -39,3 +39,6 @@ out/
 .env
 .idea/
 .gradle/
+
+config.json
+private_key.pem
